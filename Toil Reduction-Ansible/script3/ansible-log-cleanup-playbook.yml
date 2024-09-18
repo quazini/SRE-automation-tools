@@ -1,0 +1,65 @@
+---
+# Playbook: Log Cleanup Automator, wqs built for Cortex but can be used for other apps
+# This playbook is designed to clean up log files in a specified application directory
+
+- name: App Disk Cleanup
+  hosts: target_hosts  # Define your target hosts in the inventory file
+  become_user: {{ privileged_account}}  # Run tasks as the tivadmin user
+  become: true  # Enable privilege escalation
+
+  vars:
+     application_base_path: "/opt/myapp"  # Base path of the custom application
+     application_log_path: "/opt/myapp/logs"  # Path to log files
+
+  pre_tasks:
+    - name: Log the execution start time in syslog
+      shell: 'logger -i -p syslog.info "app Disk Cleanup started on $(date)"'
+      failed_when: false  # Continue execution even if this task fails
+      changed_when: false  # This task doesn't change the system state
+
+    - name: Print user inputs for debugging
+      debug:
+        msg: "{{ input_parameter }}"  # Display input parameters for debugging
+
+  tasks:
+    - name: Check if application base path exists
+      stat:
+        path: "{{ application_base_path }}"
+      register: app_path_exist  # Store the result in 'app_path_exist' variable
+
+    - name: Fail if application base path is not found
+      fail:
+        msg: "{{ application_base_path }} not found"
+      when: not app_path_exist.stat.exists  # Fail if the app path doesn't exist
+
+    - name: Find log files older than 30 days
+      find:
+        paths: "{{ application_log_path }}"
+        file_type: file
+        recurse: yes
+        patterns: "*.log,*.log.*"
+        age: "30d"  # Find files older than 30 days
+      register: log_files
+      ignore_errors: yes  # Continue even if there are permission issues
+
+    - name: Generate list of log files to delete
+      set_fact:
+        log_files_to_delete: "{{ log_files.files | map(attribute='path') | list }}"
+
+    - name: Display the list of files to be deleted for debugging
+      debug:
+        var: log_files_to_delete  # Display the list of files to be deleted
+
+    - name: Delete log files
+      ansible.builtin.file:
+        state: absent
+        path: "{{ item }}"
+      with_items: "{{ log_files_to_delete }}"
+      failed_when: false  # Continue even if a file deletion fails
+      when: level != "0"  # Only delete files if level is not '0'
+
+  post_tasks:
+    - name: Log the execution end time in syslog
+      shell: 'logger -i -p syslog.info "App Disk Cleanup ended on $(date)"'
+      failed_when: false  # Continue execution even if this task fails
+      changed_when: false  # This task doesn't change the system state

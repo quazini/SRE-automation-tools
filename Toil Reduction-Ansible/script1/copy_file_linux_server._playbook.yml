@@ -1,0 +1,125 @@
+# Playbook Name: File Copy Automator
+
+- name: Copy files to designated directories within the same server
+  hosts: target_hosts
+  vars:
+    # List of approved directories for source and destination paths 
+    approved_directories:
+      - /home
+      - /var/www
+      - /opt
+      - /usr/local
+      - /srv
+      - /mnt
+      - /tmp
+      - /media
+      - /data
+      - /backup
+
+    # List of restricted directories to prevent unauthorized access
+    restricted_directories:
+      - /etc/
+      - /var/
+      - /bin/
+      - /dev/
+      - /export/
+      - /lib/
+      - /lib64/
+      - /misc/
+      - /proc/
+      - /run/
+      - /sbin/
+      - /sys/
+      - /usr/
+      - /
+
+  pre_tasks:
+    - name: Log the start time of the playbook execution 
+      shell: "logger -i -p syslog.info 'Start copying files on $(date)'"
+      failed_when: false
+      changed_when: false
+
+    - name: Display user inputs for debugging
+      debug:
+        msg:
+          - "Source File Path: {{ source_path }}"
+          - "File or Directory to Copy: {{ file_or_directory }}"
+          - "Destination File Path: {{ destination_path }}"
+
+  tasks:
+    - name: Retrieve user ID for given account
+      shell: "id -u {{ user_account }}"
+      register: user_id
+
+    - name: Abort if user ID is less than 1000 (reserved for system accounts)
+      fail:
+        msg: "{{ user_account }} UID is part of OS reserved range. Please use a valid user account."
+      when: user_id.stdout|int < 1000
+
+    - name: Abort if source path is not in the approved directories
+      fail:
+        msg: "Source path {{ source_path }} is not in the list of approved directories."
+      when: "{{ source_path | regex_search('(' + approved_directories | join('|') + ')') == '' }}"
+
+    - name: Verify existence of the source file or directory
+      stat:
+        path: "{{ source_path }}/{{ file_or_directory }}"
+      register: source_exists
+      become: yes
+      become_user: "{{ user_account }}"
+
+    - name: Abort if the source file or directory does not exist
+      fail:
+        msg: "{{ source_path }}/{{ file_or_directory }} not found."
+      when: not source_exists.stat.exists
+
+    - name: Abort if destination path includes restricted directories
+      fail:
+        msg: "{{ destination_path }} includes restricted directories."
+      when: destination_path in restricted_directories
+
+    - name: Abort if destination path does not include approved directories
+      fail:
+        msg: "Destination path {{ destination_path }} is not in the list of approved directories."
+      when: "{{ destination_path | regex_search('(' + approved_directories | join('|') + ')') == '' }}"
+
+    - name: Verify existence of the destination path
+      stat:
+        path: "{{ destination_path }}"
+      register: destination_exists
+      become: yes
+      become_user: "{{ user_account }}"
+
+    - name: Create the destination directory if it does not exist
+      file:
+        path: "{{ destination_path }}"
+        state: directory
+        become: yes
+        become_user: "{{ user_account }}"
+      when: not destination_exists.stat.exists
+
+    - name: Check if the file or directory exists at the destination
+      stat:
+        path: "{{ destination_path }}/{{ file_or_directory }}"
+      register: dest_file_or_dir_exists
+
+    - name: Backup the existing file or directory at the destination
+      command: "mv {{ destination_path }}/{{ file_or_directory }} {{ destination_path }}/{{ file_or_directory }}_{{ ansible_date_time.iso8601_basic }}.backup"
+      when: dest_file_or_dir_exists.stat.exists
+      become: yes
+      become_user: "{{ user_account }}"
+
+    - name: Copy file or directory with owner and permissions
+      ansible.builtin.copy:
+        src: "{{ source_path }}/{{ file_or_directory }}"
+        dest: "{{ destination_path }}"
+        mode: preserve
+        remote_src: true
+      become: yes
+      become_user: "{{ user_account }}"
+
+  post_tasks:
+    - name: Log the end time of the playbook execution 
+      shell: "logger -i -p syslog.info 'Finished copying files on $(date)'"
+      failed_when: false
+      changed_when: false

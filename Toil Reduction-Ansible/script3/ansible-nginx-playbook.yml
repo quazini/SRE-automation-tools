@@ -1,0 +1,73 @@
+---
+- name: Install and Configure Nginx
+  hosts: web_servers
+  become: yes  # This allows Ansible to use sudo for privileged operations
+
+  vars:
+    nginx_port: 80
+    server_name: example.com
+
+  tasks:
+    # Update package cache and install Nginx
+    - name: Update apt cache and install Nginx
+      apt:
+        name: nginx
+        state: latest
+        update_cache: yes
+
+    # Ensure Nginx service is running and enabled on boot
+    - name: Ensure Nginx is running and enabled
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    # Create a custom Nginx configuration file
+    - name: Create custom Nginx site configuration
+      template:
+        src: nginx_site.conf.j2
+        dest: /etc/nginx/sites-available/{{ server_name }}.conf
+      notify: Reload Nginx
+
+    # Create a symbolic link to enable the site
+    - name: Enable custom Nginx site
+      file:
+        src: /etc/nginx/sites-available/{{ server_name }}.conf
+        dest: /etc/nginx/sites-enabled/{{ server_name }}.conf
+        state: link
+      notify: Reload Nginx
+
+    # Remove the default Nginx site configuration
+    - name: Remove default Nginx site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Reload Nginx
+
+    # Create a simple index.html file
+    - name: Create index.html
+      copy:
+        content: "<html><body><h1>Welcome to {{ server_name }}</h1></body></html>"
+        dest: /var/www/html/index.html
+
+  # Define handlers to be called when notified
+  handlers:
+    - name: Reload Nginx
+      service:
+        name: nginx
+        state: reloaded
+
+# This is the Jinja2 template for the Nginx site configuration
+# Save this in a file named nginx_site.conf.j2 in the same directory as the playbook
+#
+# server {
+#     listen {{ nginx_port }};
+#     server_name {{ server_name }};
+#
+#     root /var/www/html;
+#     index index.html index.htm;
+#
+#     location / {
+#         try_files $uri $uri/ =404;
+#     }
+# }

@@ -1,0 +1,137 @@
+# Playbook Name: Secure File Copy Automator
+
+- name: Securely copy files within the same server
+  hosts: target_hosts
+  vars:
+    # Directories where files are allowed to be copied from and to
+    approved_directories:
+      - /home
+      - /var/www
+      - /opt
+      - /usr/local
+      - /srv
+      - /mnt
+      - /tmp
+      - /media
+      - /data
+      - /backup
+
+    # Directories that are restricted and shouldn't be used for file operations
+    restricted_directories:
+      - /etc/
+      - /var/
+      - /bin/
+      - /dev/
+      - /export/
+      - /lib/
+      - /lib64/
+      - /misc/
+      - /proc/
+      - /run/
+      - /sbin/
+      - /sys/
+      - /usr/
+      - /
+
+  pre_tasks:
+    - name: Log the execution start time in syslog
+      shell: "logger -i -p syslog.info 'Execution of Secure File Copy Automator started on $(date)'"
+      failed_when: false
+      changed_when: false
+
+    - name: Print user inputs for debugging
+      debug:
+        msg:
+          - "Source File Path: {{ source_path }}"
+          - "Source File or Directory: {{ file_or_directory }}"
+          - "Destination File Path: {{ destination_path }}"
+
+  tasks:
+    - name: Retrieve user ID for the specified account
+      shell: "id -u {{ user_account }}"
+      register: user_id
+
+    - name: Terminate execution if user ID is less than 1000
+      fail:
+        msg: "{{ user_account }} UID is part of OS reserved range. Please use a valid user account."
+      when: user_id.stdout|int < 1000
+
+    - name: Abort if source path is not in approved directories
+      fail:
+        msg: "Source path {{ source_path }} is not in the list of approved directories."
+      when: "{{ source_path | regex_search('(' + approved_directories | join('|') + ')') == '' }}"
+
+    - name: Check if the source file or directory exists
+      ansible.builtin.find:
+        paths: "{{ source_path }}"
+        patterns: "{{ file_or_directory }}"
+      register: src_file_exist
+      become: yes
+      become_user: "{{ user_account }}"
+
+    - name: Fail if the source file or directory doesn't exist
+      fail:
+        msg: "{{ source_path }}/{{ file_or_directory }} not found"
+      when: src_file_exist.files | length == 0
+
+    - name: Abort if destination path contains restricted directories
+      fail:
+        msg: "{{ destination_path }} contains restricted directories"
+      when: destination_path in restricted_directories
+
+    - name: Abort if destination path is not in approved directories
+      fail:
+        msg: "Destination path {{ destination_path }} is not in the list of approved directories."
+      when: "{{ destination_path | regex_search('(' + approved_directories | join('|') + ')') == '' }}"
+
+    - name: Check if destination path exists
+      stat:
+        path: "{{ destination_path }}"
+      register: dest_path_exist
+      become: yes
+      become_user: "{{ user_account }}"
+
+    - name: Create destination directory if it doesn't exist
+      file:
+        path: "{{ destination_path }}"
+        state: directory
+        become: yes
+        become_user: "{{ user_account }}"
+      when: not dest_path_exist.stat.exists
+
+    - name: Check if the file or directory exists in the destination path
+      ansible.builtin.find:
+        paths: "{{ destination_path }}"
+        patterns: "{{ file_or_directory }}"
+      register: dest_file_exist
+      become: yes
+      become_user: "{{ user_account }}"
+
+    - name: Display existing destination files matching pattern for debugging
+      debug:
+        msg: "{{ dest_file_exist.files | map(attribute='path') | list }}"
+      when: dest_file_exist.files | length > 0
+
+    - name: Backup existing files at the destination if they exist
+      command: "mv {{ item }} {{ item }}_{{ ansible_date_time.iso8601_basic }}.backup"
+      loop: "{{ dest_file_exist.files | map(attribute='path') | list }}"
+      when: dest_file_exist.files | length > 0
+      become: yes
+      become_user: "{{ user_account }}"
+
+    - name: Copy file or directory to the destination with owner and permissions preserved
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ destination_path }}/{{ item | basename }}"
+        mode: preserve
+        remote_src: true
+      loop: "{{ src_file_exist.files | map(attribute='path') | list }}"
+      register: copy_results
+      become: yes
+      become_user: "{{ user_account }}"
+
+  post_tasks:
+    - name: Log the execution end time in syslog
+      shell: "logger -i -p syslog.info 'Execution of Secure File Copy Automator ended on $(date)'"
+      failed_when: false
+      changed_when: false
