@@ -15,9 +15,9 @@ This repository contains a collection of Site Reliability Engineering (SRE) tool
 
 This section contains Ansible playbooks for automating various tasks and reducing toil:
 
-- **Script 1:** Brief description
-- **Script 2:** Brief description
-- **Script 3:** Brief description
+- **Script 1:** copy_file_linux_server._playbook
+- **Script 2:** copy_files_linux_serevr_regex_playbook
+- **Script 3:** ansible-log-cleanup-playbook
 
 For detailed information on each script, please refer to their individual README files.
 
