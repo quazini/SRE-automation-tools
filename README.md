@@ -3,8 +3,8 @@
 This repository contains a collection of Site Reliability Engineering (SRE) tools for automation, toil reduction, and SLO monitoring.
 
 ## Contents
-- [Service Level Objectives (SLOs)](#Automation Tools)
-- [Ansible Scripts](#Toil Reduction Ansible)
+- [Ansible Scripts](#ansible-scripts)
+- [Service Level Objectives (SLOs)](#service-level-objectives)
 - [SRE Tests](#sre-tests)
 - [Getting Started](#getting-started)
 - [Contributing](#contributing)
