@@ -1,28 +1,47 @@
-**SRE Automation Tools**
+# SRE Automation Tools
+
 This repository contains a collection of Site Reliability Engineering (SRE) tools for automation, toil reduction, and SLO monitoring.
-Contents
 
-Ansible Scripts
-Service Level Objectives (SLOs)
-SRE Tests
+## Contents
+- [Service Level Objectives (SLOs)](#Automation Tools)
+- [Ansible Scripts](#Toil Reduction Ansible)
+- [SRE Tests](#sre-tests)
+- [Getting Started](#getting-started)
+- [Contributing](#contributing)
+- [License](#license)
+- [Author](#author)
 
-Ansible Scripts
+## Ansible Scripts
+
 This section contains Ansible playbooks for automating various tasks and reducing toil:
 
-Script 1: 
-Script 2: Brief description
-Script 3: Brief description
+- **Script 1:** Brief description
+- **Script 2:** Brief description
+- **Script 3:** Brief description
 
 For detailed information on each script, please refer to their individual README files.
-Service Level Objectives
-Our SLO documentation outlines our defined Service Level Objectives and how we measure them accross several applications ive worked with like Netcool, Geneos, Smarts, Cortex.
-SRE Tests
-The tests directory contains various SRE tests we use to ensure the reliability and performance of our systems.
-Getting Started
-Instructions on how to use these tools in your environment.
-Contributing
-Guidelines for contributing to this repository.
-License
 
-Author
-Nanven Faden (nanvenfaden@gmail.com)
+## Service Level Objectives
+
+Our SLO documentation outlines our defined Service Level Objectives and how we measure them across several applications I've worked with, like Netcool, Geneos, Smarts, and Cortex.
+
+## SRE Tests
+
+The `tests` directory contains various SRE tests we use to ensure the reliability and performance of our systems.
+
+## Getting Started
+
+Instructions on how to use these tools in your environment will be provided here.
+
+## Contributing
+
+Guidelines for contributing to this repository.
+
+## License
+
+This project is licensed under [LICENSE]. (Please replace `[LICENSE]` with the appropriate license information for your project).
+
+## Author
+
+Nanven Faden  
+[nanvenfaden@gmail.com](mailto:nanvenfaden@gmail.com)
