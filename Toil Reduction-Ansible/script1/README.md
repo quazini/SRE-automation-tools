@@ -1,6 +1,6 @@
 # File Copy Automator
 
-This Ansible playbook automates the process of copying files or directories within the same Linux server, reducing toil associated with manual file management tasks.
+This Ansible playbook automates the process of copying files or directories within the same Linux server, reducing toil associated with manual file management tasks. Kindly nte that you cannot use regular expressions to copy files, if you need to take a look at script 2.
 
 ## Prerequisites
 
