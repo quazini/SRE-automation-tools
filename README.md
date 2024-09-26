@@ -23,6 +23,6 @@ Instructions on how to use these tools in your environment.
 Contributing
 Guidelines for contributing to this repository.
 License
-Feel free to use in your systems
+
 Author
 Nanven Faden (nanvenfaden@gmail.com)
