@@ -1,0 +1,36 @@
+# File: cortex_latency_slo.yaml
+# 
+# Description: PromQL query for Cortex Latency SLO
+# This query calculates the percentage of responses within the specified latency threshold (190.73 ms)
+# over the last hour, compared to the total number of responses in the same timeframe.
+#
+# Usage: This query can be used in Prometheus or compatible monitoring systems to track
+# the performance of a Cortex cluster.
+
+query: >
+  sum(
+    increase(
+      cortex_response_speed_within_threshold{
+        cluster="prod",
+        threshold_ms="190.73486328125"
+      }[1h]
+    )
+  ) * 100 / 
+  sum(
+    increase(
+      cortex_total_response_count{
+        cluster="prod"
+      }[1h]
+    )
+  )
+
+labels:
+  team: observability
+  service: cortex
+  slo_type: latency
+
+thresholds:
+  warning: 99.9
+  critical: 99.5
+
+evaluation_interval: 5m
