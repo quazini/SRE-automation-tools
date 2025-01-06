@@ -19,6 +19,7 @@ This section contains Ansible playbooks for automating various tasks and reducin
 - **Script 2:** copy_files_linux_serevr_regex_playbook
 - **Script 3:** ansible-log-cleanup-playbook
 - **Script 4:** Filesystem Monitor Python Script
+  
 For detailed information on each script, please refer to their individual README files.
 
 ## Service Level Objectives
